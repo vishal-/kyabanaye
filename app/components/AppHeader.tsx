@@ -16,27 +16,16 @@ export default function AppHeader() {
 
   return (
     <header className="bg-slate-50 border-b border-slate-200">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-2">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
+      <div className="w-full mx-auto py-1">
+        <div className="flex items-center justify-center">
             <Link href="/" className="flex items-center gap-2">
               <img
                 src="/logo.png"
                 alt="Plate Slate Logo"
                 className="h-12 sm:h-14 md:h-16 w-auto object-contain"
               />
-            </Link>
-            <span className="hidden md:inline text-slate-300">|</span>
-            <div className="hidden md:block text-left">
-              <p className="text-xs font-semibold text-slate-700">
-                {greeting}!
-              </p>
-              <p className="text-[10px] text-slate-400">
-                Socho kam, khao zyada
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 sm:gap-6">
+            </Link>            
+          {/* <div className="flex items-center gap-4 sm:gap-6">
             <nav className="text-sm font-medium text-slate-600 flex items-center gap-3 sm:gap-4">
               <Link
                 href="/"
@@ -65,7 +54,7 @@ export default function AppHeader() {
                 Recipes
               </Link>
             </nav>
-          </div>
+          </div> */}
         </div>
       </div>
     </header>
