@@ -19,59 +19,26 @@ enum MealType {
   DRINK
 }
 
-enum Role {
-  ADMIN
-  USER
-}
-
 enum DishCategory {
   VEG
   NON_VEG
   EGG
 }
 
-model User {
-  id           String          @id @default(uuid()) @db.Uuid
-  email        String          @unique
-  name         String?
-  role         Role            @default(USER)
-  createdAt    DateTime        @default(now())
-  mealPlans    MealPlan[]      @relation("UserMealPlans")
-  sharedWithMe SharedPlan[]    @relation("SharedToUser")
-  sharedByMe   SharedPlan[]    @relation("SharedFromUser")
-  dishes       Dish[]          @relation("UserDishes")
-}
-
 model Dish {
-  id               String          @id @default(uuid()) @db.Uuid
-  name             String          @unique
-  description      String?
-  imageUrl         String?
-  recipeUrl        String?
-  category         DishCategory?
+  id                 String          @id @default(uuid()) @db.Uuid
+  name               String          @unique
+  description        String?
+  imageUrl           String?
+  recipeUrl          String?
+  category           DishCategory?
   suggestedMealTypes MealType[]
-  userId           String?         @db.Uuid
-  user             User?           @relation("UserDishes", fields: [userId], references: [id])
-  createdAt        DateTime        @default(now())
+  createdAt          DateTime        @default(now())
 }
 
 model MealPlan {
   id        String   @id @default(uuid()) @db.Uuid
-  date      DateTime
-  userId    String?  @db.Uuid
-  user      User?    @relation("UserMealPlans", fields: [userId], references: [id])
+  date      DateTime @unique
   meals     Json     // e.g. { "BREAKFAST": ["Aloo parantha", "lassi"], "LUNCH": ["Dal makhani"] }
   createdAt DateTime @default(now())
-
-  @@unique([date, userId])
-}
-
-model SharedPlan {
-  id           String @id @default(uuid()) @db.Uuid
-  sharerId     String @db.Uuid
-  sharer       User   @relation("SharedFromUser", fields: [sharerId], references: [id])
-  receiverId   String @db.Uuid
-  receiver     User   @relation("SharedToUser", fields: [receiverId], references: [id])
-
-  @@unique([sharerId, receiverId])
 }

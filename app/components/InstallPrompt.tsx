@@ -90,7 +90,7 @@ export default function InstallPrompt() {
             <h4 className="text-sm font-bold text-white">Install PlateSlate</h4>
             <p className="text-xs text-slate-300">
               {isIos
-                ? "Add to your home screen for quick access"
+                ? "Add to your home screen"
                 : "Fast access right from your home screen"}
             </p>
           </div>
@@ -108,7 +108,7 @@ export default function InstallPrompt() {
 
           {showIosPrompt && (
             <div className="flex items-center gap-1 rounded-2xl bg-emerald-500/20 px-3 py-1.5 text-[11px] font-semibold text-emerald-300 border border-emerald-500/30">
-              <FiShare size={13} className="text-emerald-400" /> Tap Share & Add to Home
+              <FiShare size={13} className="text-emerald-400" /> Install
             </div>
           )}
 

@@ -34,12 +34,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Bypass service worker for API calls, Firebase, and non-GET requests
+  // Bypass service worker for API calls and non-GET requests
   if (
     event.request.method !== "GET" ||
-    url.pathname.startsWith("/api/") ||
-    url.hostname.includes("firebase") ||
-    url.hostname.includes("googleapis")
+    url.pathname.startsWith("/api/")
   ) {
     return;
   }
