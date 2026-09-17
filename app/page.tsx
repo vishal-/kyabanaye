@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import type { MealType } from "@prisma/client";
-import BottomNav from "./components/BottomNav";
 
 const toISODateString = (date: Date) => {
   const yyyy = date.getFullYear();
@@ -150,7 +149,7 @@ export default function Home() {
   const displayMeals = getMealsToDisplay();
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 pb-24 text-slate-900 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-slate-50 p-4 pb-8 text-slate-900 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mt-1 lg:flex lg:gap-8">
           {/* Main Daily Plan Section */}
@@ -271,7 +270,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <BottomNav />
     </div>
   );
 }

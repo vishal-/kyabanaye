@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FiPlus, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import BottomNav from "@/app/components/BottomNav";
 
 type Dish = {
   id: string;
@@ -63,7 +62,7 @@ export default function DishesPage() {
   }, [page]);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-12">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-white border-b border-slate-100 px-4 py-4 flex items-center justify-between">
         <div>
@@ -166,8 +165,7 @@ export default function DishesPage() {
           </div>
         )}
       </div>
-
-      <BottomNav />
     </div>
   );
 }
+
