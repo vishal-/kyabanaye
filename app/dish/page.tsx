@@ -12,7 +12,6 @@ type Dish = {
   imageUrl: string | null;
   category: "VEG" | "NON_VEG" | "EGG" | null;
   suggestedMealTypes: string[];
-  userId: string | null;
 };
 
 const categoryBadge: Record<string, string> = {
@@ -27,9 +26,6 @@ const categoryLabel: Record<string, string> = {
   EGG: "🥚 Egg",
 };
 
-// TODO: Replace with real session userId once auth is wired up
-const CURRENT_USER_ID: string | null = null;
-
 export default function DishesPage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [page, setPage] = useState(1);
@@ -42,7 +38,6 @@ export default function DishesPage() {
     const fetchDishes = async () => {
       setLoading(true);
       const params = new URLSearchParams({ page: String(page) });
-      if (CURRENT_USER_ID) params.set("userId", CURRENT_USER_ID);
 
       try {
         const r = await fetch(`/api/dishes?${params}`);
@@ -74,7 +69,9 @@ export default function DishesPage() {
         <div>
           <h1 className="text-lg font-semibold text-slate-900">Dishes</h1>
           {!loading && (
-            <p className="text-xs text-slate-400">{total} dish{total !== 1 ? "es" : ""}</p>
+            <p className="text-xs text-slate-400">
+              {total} dish{total !== 1 ? "es" : ""}
+            </p>
           )}
         </div>
         <Link
@@ -116,22 +113,27 @@ export default function DishesPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl">🍴</div>
+                    <div className="w-full h-full flex items-center justify-center text-2xl">
+                      🍴
+                    </div>
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-slate-900 truncate">{dish.name}</p>
-                    {dish.userId && (
-                      <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Mine</span>
-                    )}
+                    <p className="font-semibold text-slate-900 truncate">
+                      {dish.name}
+                    </p>
                   </div>
                   {dish.description && (
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">{dish.description}</p>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                      {dish.description}
+                    </p>
                   )}
                   {dish.category && (
-                    <span className={`mt-1 inline-block text-[10px] font-medium px-2 py-0.5 rounded-full ${categoryBadge[dish.category]}`}>
+                    <span
+                      className={`mt-1 inline-block text-[10px] font-medium px-2 py-0.5 rounded-full ${categoryBadge[dish.category]}`}
+                    >
                       {categoryLabel[dish.category]}
                     </span>
                   )}

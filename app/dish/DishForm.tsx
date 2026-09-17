@@ -80,9 +80,6 @@ export default function DishForm({
     setForm((prev) => ({ ...prev, imageName: file.name }));
   };
 
-  // TODO: Replace with real session userId once auth is wired up
-  const CURRENT_USER_ID: string | null = null;
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
@@ -91,7 +88,7 @@ export default function DishForm({
       const res = await fetch("/api/dishes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, userId: CURRENT_USER_ID }),
+        body: JSON.stringify(form),
       });
       if (!res.ok) {
         const data = await res.json();

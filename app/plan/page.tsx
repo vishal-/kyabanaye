@@ -9,7 +9,6 @@ import {
   FiCheckCircle,
   FiSave,
 } from "react-icons/fi";
-import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import PlanCell, { type DishSuggestion } from "./PlanCell";
 
@@ -100,7 +99,6 @@ const allMealRows: Array<{
 ];
 
 export default function PlanPage() {
-  const { dbUser, loading } = useAuth();
   const router = useRouter();
 
   const [activeMealTypes, setActiveMealTypes] = useState(mealTypes);
@@ -109,13 +107,6 @@ export default function PlanPage() {
   const [grid, setGrid] = useState<Record<string, string[]>>({});
   const [showSaveToast, setShowSaveToast] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
-
-  // Restrict access entirely if not logged in
-  useEffect(() => {
-    if (!loading && !dbUser) {
-      router.push("/login");
-    }
-  }, [dbUser, loading, router]);
 
   // Fetch all dishes on mount
   useEffect(() => {
@@ -141,39 +132,35 @@ export default function PlanPage() {
       endDate.setDate(weekStart.getDate() + 6);
       const endDateStr = toISODateString(endDate);
 
-      if (dbUser?.id) {
-        try {
-          const res = await fetch(
-            `/api/mealplans?userId=${dbUser.id}&startDate=${startDateStr}&endDate=${endDateStr}`
-          );
-          if (res.ok) {
-            interface PlanRecord {
-              date: string;
-              meals: Record<string, string[]>;
-            }
-            const data: PlanRecord[] = await res.json();
-            // Translate JSON structure into flat state grid
-            const newGrid: Record<string, string[]> = {};
-            data.forEach((plan: PlanRecord) => {
-              const planDate = new Date(plan.date);
-              const dateKey = toISODateString(planDate);
-              const meals = plan.meals as Record<string, string[]>;
-              Object.entries(meals).forEach(([mealType, dishes]) => {
-                newGrid[`${dateKey}_${mealType}`] = dishes;
-              });
-            });
-            setGrid(newGrid);
+      try {
+        const res = await fetch(
+          `/api/mealplans?startDate=${startDateStr}&endDate=${endDateStr}`
+        );
+        if (res.ok) {
+          interface PlanRecord {
+            date: string;
+            meals: Record<string, string[]>;
           }
-        } catch (e) {
-          console.error("Failed to load plan from database:", e);
+          const data: PlanRecord[] = await res.json();
+          // Translate JSON structure into flat state grid
+          const newGrid: Record<string, string[]> = {};
+          data.forEach((plan: PlanRecord) => {
+            const planDate = new Date(plan.date);
+            const dateKey = toISODateString(planDate);
+            const meals = plan.meals as Record<string, string[]>;
+            Object.entries(meals).forEach(([mealType, dishes]) => {
+              newGrid[`${dateKey}_${mealType}`] = dishes;
+            });
+          });
+          setGrid(newGrid);
         }
+      } catch (e) {
+        console.error("Failed to load plan from database:", e);
       }
     };
 
-    if (!loading && dbUser) {
-      loadPlan();
-    }
-  }, [weekStart, dbUser, loading]);
+    loadPlan();
+  }, [weekStart]);
 
   const toggleMealType = (id: MealType) => {
     setActiveMealTypes((prev) =>
@@ -205,23 +192,23 @@ export default function PlanPage() {
     endDate.setDate(weekStart.getDate() + 6);
     const endDateStr = toISODateString(endDate);
 
-    if (!dbUser?.id) return;
-
     // Format grid state to database schema format
-    const plans = currentWeekDays.map((day) => {
-      const meals: Record<string, string[]> = {};
-      allMealRows.forEach((row) => {
-        const key = `${day.dateStr}_${row.id}`;
-        const dishes = grid[key];
-        if (dishes && dishes.length > 0) {
-          meals[row.id] = dishes;
-        }
-      });
-      return {
-        date: day.dateStr,
-        meals,
-      };
-    }).filter((p) => Object.keys(p.meals).length > 0);
+    const plans = currentWeekDays
+      .map((day) => {
+        const meals: Record<string, string[]> = {};
+        allMealRows.forEach((row) => {
+          const key = `${day.dateStr}_${row.id}`;
+          const dishes = grid[key];
+          if (dishes && dishes.length > 0) {
+            meals[row.id] = dishes;
+          }
+        });
+        return {
+          date: day.dateStr,
+          meals,
+        };
+      })
+      .filter((p) => Object.keys(p.meals).length > 0);
 
     try {
       const res = await fetch("/api/mealplans", {
@@ -230,7 +217,6 @@ export default function PlanPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: dbUser.id,
           startDate: startDateStr,
           endDate: endDateStr,
           plans,
@@ -238,7 +224,7 @@ export default function PlanPage() {
       });
 
       if (res.ok) {
-        setSaveMessage("Meal plan saved to cloud!");
+        setSaveMessage("Meal plan saved!");
         setShowSaveToast(true);
         setTimeout(() => setShowSaveToast(false), 3000);
       } else {
@@ -290,20 +276,6 @@ export default function PlanPage() {
     const mealTypeObj = activeMealTypes.find((m) => m.id === row.id);
     return mealTypeObj ? mealTypeObj.checked : false;
   });
-
-  // Render a full-screen loading spinner while verifying login status
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-      </div>
-    );
-  }
-
-  // Prevent flicker during redirect
-  if (!dbUser) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
@@ -377,7 +349,11 @@ export default function PlanPage() {
               <button
                 key={meal.id}
                 onClick={() => toggleMealType(meal.id)}
-                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-medium transition cursor-pointer ${meal.checked ? "border-emerald-500 bg-emerald-50 text-slate-900 shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
+                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-medium transition cursor-pointer ${
+                  meal.checked
+                    ? "border-emerald-500 bg-emerald-50 text-slate-900 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                }`}
               >
                 <span>{meal.label}</span>
                 {meal.checked && (
@@ -411,12 +387,20 @@ export default function PlanPage() {
                     <div
                       key={`${row.id}-${day.label}`}
                       className={`rounded-2xl px-4 py-3 border ${
-                        isPast ? "bg-slate-100/50 border-slate-200/60" : "bg-slate-50 border-slate-100"
+                        isPast
+                          ? "bg-slate-100/50 border-slate-200/60"
+                          : "bg-slate-50 border-slate-100"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">
-                        <span>{day.label} ({day.date})</span>
-                        {isPast && <span className="text-[10px] text-slate-400 font-normal lowercase tracking-normal">(past day)</span>}
+                        <span>
+                          {day.label} ({day.date})
+                        </span>
+                        {isPast && (
+                          <span className="text-[10px] text-slate-400 font-normal lowercase tracking-normal">
+                            (past day)
+                          </span>
+                        )}
                       </div>
                       <PlanCell
                         dateStr={day.dateStr}
@@ -448,12 +432,24 @@ export default function PlanPage() {
                     <th
                       key={day.label}
                       className={`border-l border-slate-200 px-4 py-4 ${
-                        isPast ? "bg-slate-100/50" : isToday ? "bg-emerald-50/50" : ""
+                        isPast
+                          ? "bg-slate-100/50"
+                          : isToday
+                          ? "bg-emerald-50/50"
+                          : ""
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className={`text-sm font-semibold ${isPast ? "text-slate-400" : isToday ? "text-emerald-700 font-bold" : "text-slate-900"}`}>
+                          <div
+                            className={`text-sm font-semibold ${
+                              isPast
+                                ? "text-slate-400"
+                                : isToday
+                                ? "text-emerald-700 font-bold"
+                                : "text-slate-900"
+                            }`}
+                          >
                             {day.label}
                           </div>
                           <div className="text-xs text-slate-500">{day.date}</div>

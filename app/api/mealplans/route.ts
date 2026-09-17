@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
 
 interface InputPlan {
   date: string;
@@ -10,7 +9,6 @@ interface InputPlan {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const userId = searchParams.get("userId");
     const startDateStr = searchParams.get("startDate");
     const endDateStr = searchParams.get("endDate") || startDateStr;
 
@@ -24,21 +22,13 @@ export async function GET(req: NextRequest) {
     const startDate = new Date(startDateStr + "T00:00:00.000Z");
     const endDate = new Date(endDateStr + "T23:59:59.999Z");
 
-    const where: Prisma.MealPlanWhereInput = {
-      date: {
-        gte: startDate,
-        lte: endDate,
-      },
-    };
-
-    if (userId) {
-      where.userId = userId;
-    } else {
-      return NextResponse.json([]);
-    }
-
     const plans = await prisma.mealPlan.findMany({
-      where,
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
       orderBy: {
         date: "asc",
       },
@@ -57,11 +47,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, startDate: startDateStr, endDate: endDateStr, plans } = body;
+    const { startDate: startDateStr, endDate: endDateStr, plans } = body;
 
-    if (!startDateStr || !endDateStr || !userId) {
+    if (!startDateStr || !endDateStr) {
       return NextResponse.json(
-        { error: "userId, startDate, and endDate are required" },
+        { error: "startDate and endDate are required" },
         { status: 400 }
       );
     }
@@ -72,7 +62,6 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction([
       prisma.mealPlan.deleteMany({
         where: {
-          userId,
           date: {
             gte: startDate,
             lte: endDate,
@@ -82,7 +71,6 @@ export async function POST(req: NextRequest) {
       prisma.mealPlan.createMany({
         data: (plans || []).map((p: InputPlan) => ({
           date: new Date(p.date + "T00:00:00.000Z"),
-          userId,
           meals: p.meals,
         })),
       }),

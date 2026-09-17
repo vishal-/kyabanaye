@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { useAuth } from "@/context/AuthContext";
 import type { MealType } from "@prisma/client";
 import BottomNav from "./components/BottomNav";
 
@@ -53,9 +51,6 @@ const chronologicalOrder: MealType[] = [
 ];
 
 export default function Home() {
-  const { dbUser, loading } = useAuth();
-  const router = useRouter();
-
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -65,22 +60,13 @@ export default function Home() {
   const [dayPlan, setDayPlan] = useState<Record<string, string[]>>({});
   const [fetchingPlan, setFetchingPlan] = useState(false);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!loading && !dbUser) {
-      router.push("/login");
-    }
-  }, [dbUser, loading, router]);
-
   // Fetch plan for the selected single date
   useEffect(() => {
     const fetchPlan = async () => {
-      if (!dbUser?.id) return;
       setFetchingPlan(true);
-
       const dateStr = toISODateString(selectedDate);
       try {
-        const res = await fetch(`/api/mealplans?userId=${dbUser.id}&startDate=${dateStr}`);
+        const res = await fetch(`/api/mealplans?startDate=${dateStr}`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {
@@ -96,10 +82,8 @@ export default function Home() {
       }
     };
 
-    if (!loading && dbUser) {
-      fetchPlan();
-    }
-  }, [selectedDate, dbUser, loading]);
+    fetchPlan();
+  }, [selectedDate]);
 
   const handlePrevWeek = () => {
     setSelectedDate((prev) => {
@@ -165,25 +149,12 @@ export default function Home() {
 
   const displayMeals = getMealsToDisplay();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-      </div>
-    );
-  }
-
-  if (!dbUser) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 p-4 pb-24 text-slate-900 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mt-1 lg:flex lg:gap-8">
           {/* Main Daily Plan Section */}
           <div className="lg:w-2/3 space-y-6">
-
             {/* Infinite Date Slider */}
             <section className="bg-white rounded-3xl p-3 sm:p-4 shadow-sm border border-slate-100">
               <div className="flex items-center justify-between gap-1.5 sm:gap-3">
@@ -207,10 +178,11 @@ export default function Home() {
                       <button
                         key={d.getTime()}
                         onClick={() => setSelectedDate(d)}
-                        className={`flex-1 min-w-0 max-w-[50px] sm:max-w-[64px] text-center py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border transition-all duration-200 cursor-pointer ${isActive
-                          ? "bg-emerald-600 border-emerald-600 text-white shadow-md scale-105"
-                          : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
-                          }`}
+                        className={`flex-1 min-w-0 max-w-[50px] sm:max-w-[64px] text-center py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border transition-all duration-200 cursor-pointer ${
+                          isActive
+                            ? "bg-emerald-600 border-emerald-600 text-white shadow-md scale-105"
+                            : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
+                        }`}
                       >
                         <div className="text-[8px] sm:text-[10px] uppercase font-bold tracking-wider opacity-85 truncate">
                           {dayShort}
@@ -297,7 +269,6 @@ export default function Home() {
               )}
             </main>
           </div>
-
         </div>
       </div>
       <BottomNav />

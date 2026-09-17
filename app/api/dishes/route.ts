@@ -25,27 +25,19 @@ const PAGE_SIZE = 20;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const userId = searchParams.get("userId");
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
-
-  const where = {
-    OR: [
-      { userId: null },
-      ...(userId ? [{ userId }] : []),
-    ],
-  };
-
   const limit = searchParams.get("limit");
   const isAll = limit === "all";
 
   const [dishes, total] = await Promise.all([
     prisma.dish.findMany({
-      where,
       orderBy: { name: "asc" },
-      ...(isAll ? {} : {
-        skip: (page - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
-      }),
+      ...(isAll
+        ? {}
+        : {
+            skip: (page - 1) * PAGE_SIZE,
+            take: PAGE_SIZE,
+          }),
       select: {
         id: true,
         name: true,
@@ -53,10 +45,10 @@ export async function GET(req: NextRequest) {
         imageUrl: true,
         category: true,
         suggestedMealTypes: true,
-        userId: true,
+        createdAt: true,
       },
     }),
-    prisma.dish.count({ where }),
+    prisma.dish.count(),
   ]);
 
   return NextResponse.json({
@@ -70,10 +62,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, description, recipeUrl, category, selectedMealTypes, userId } = body;
+  const { name, description, recipeUrl, category, selectedMealTypes } = body;
 
   if (!name?.trim() || !selectedMealTypes?.length) {
-    return NextResponse.json({ error: "Name and meal types are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Name and meal types are required" },
+      { status: 400 }
+    );
   }
 
   const dish = await prisma.dish.create({
@@ -82,8 +77,9 @@ export async function POST(req: NextRequest) {
       description: description?.trim() || null,
       recipeUrl: recipeUrl?.trim() || null,
       category: category ? categoryMap[category] ?? null : null,
-      suggestedMealTypes: selectedMealTypes.map((t: string) => mealTypeMap[t]).filter(Boolean),
-      userId: userId ?? null,
+      suggestedMealTypes: selectedMealTypes
+        .map((t: string) => mealTypeMap[t])
+        .filter(Boolean),
     },
   });
 
